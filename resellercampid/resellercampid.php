@@ -272,12 +272,12 @@ class Resellercampid extends RegistrarModule {
                     $response = $domains->register(array_intersect_key($vars, $domain_fields));
                 }
 
-                $var_response = $response->response();
-                if (!empty($var_response["domain_id"])) {
-                    $order_id = $var_response["domain_id"];
-                }
-
                 $this->processResponse($api, $response);
+                if ($response->status() == "OK") {
+                    // Add Sleep for a few seconds to allow the domain to be registered
+                    sleep(3); 
+                    $order_id = $this->getorderid($package->module_row, $vars['domain-name']);
+                }
 
                 if ($this->Input->errors())
                     return;
@@ -401,7 +401,27 @@ class Resellercampid extends RegistrarModule {
      */
     public function suspendService ($package, $service, $parent_package = null, $parent_service = null)
     {
-        return null; // Nothing to do
+        $row = $this->getModuleRow($package->module_row);
+        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
+        $api->loadCommand("resellercampid_domains");
+        $domains = new ResellercampidDomains($api);
+        // Renew domain
+        if ($package->meta->type == "domain") {
+            $fields = $this->serviceFieldsToObject($service->fields);
+
+            $vars = array(
+                'domain_id' => $fields->{'order-id'},
+                'reason' => $service->suspension_reason,
+            );
+
+            $response = $domains->suspend($vars);
+            $this->processResponse($api, $response);
+        } else {
+            #
+            # TODO: SSL Cert: Set cancelation date of service?
+            #
+        }
+        return;
     }
 
     /**
@@ -421,7 +441,26 @@ class Resellercampid extends RegistrarModule {
      */
     public function unsuspendService ($package, $service, $parent_package = null, $parent_service = null)
     {
-        return null; // Nothing to do
+        $row = $this->getModuleRow($package->module_row);
+        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
+        $api->loadCommand("resellercampid_domains");
+        $domains = new ResellercampidDomains($api);
+        // Renew domain
+        if ($package->meta->type == "domain") {
+            $fields = $this->serviceFieldsToObject($service->fields);
+
+            $vars = array(
+                'domain_id' => $fields->{'order-id'}
+            );
+
+            $response = $domains->unsuspend($vars);
+            $this->processResponse($api, $response);
+        } else {
+            #
+            # TODO: SSL Cert: Set cancelation date of service?
+            #
+        }
+        return;
     }
 
     /**
@@ -444,6 +483,9 @@ class Resellercampid extends RegistrarModule {
 
         $row = $this->getModuleRow($package->module_row);
         $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
+        $api->loadCommand("resellercampid_domains");
+        $domains = new ResellercampidDomains($api);
+        
 
         // Renew domain
         if ($package->meta->type == "domain") {
@@ -456,7 +498,7 @@ class Resellercampid extends RegistrarModule {
             $vars = array(
                 'years' => 1,
                 'domain_id' => $fields->{'order-id'},
-                'current_date' => $order["end_date"],
+                'current_date' => $order['end_time'],
                 'invoice_option' => "no_invoice"
             );
 
@@ -468,9 +510,7 @@ class Resellercampid extends RegistrarModule {
             }
 
             // Only process renewal if adding years today will add time to the expiry date
-            if (strtotime("+" . $vars['years'] . " years") > $order["end_date"]) {
-                $api->loadCommand("resellercampid_domains");
-                $domains = new ResellercampidDomains($api);
+            if (strtotime("+" . $vars['years'] . " years") > strtotime($order['end_time'])) {
                 $response = $domains->renew($vars);
                 $this->processResponse($api, $response);
             }
@@ -1459,7 +1499,11 @@ class Resellercampid extends RegistrarModule {
 
                     $auth_code = $getAuth->response();
 
-                    $vars->epp_code = ($auth_code) ? $auth_code : 'null';
+                    if($getAuth->status() == "OK" && !empty($auth_code)) {
+                        $vars->epp_code = $auth_code;
+                    } else {
+                        $vars->epp_code = 'null';
+                    }
                 }
             }
         } else {
@@ -1562,7 +1606,7 @@ class Resellercampid extends RegistrarModule {
                     $this->processResponse($api, $response);
                 }
                 if ($post["type"] == "AAAA") {
-                    $post_var["old-ip"] = $post_var["old-value"];
+                    $post_var["old-ip"] = $post_var["old_value"];
                     $post_var["ip"] = $post_var["value"];
                     $response = $dns->updateIpv6Record($post_var);
                     $this->processResponse($api, $response);
@@ -1590,7 +1634,7 @@ class Resellercampid extends RegistrarModule {
                     $this->processResponse($api, $response);
                 }
                 if ($post["type"] == "AAAA") {
-                    $post_var["old-ip"] = $post_var["old-value"];
+                    $post_var["old-ip"] = $post_var["old_value"];
                     $post_var["ip"] = $post_var["value"];
                     $response = $dns->deleteIpv6Record($post_var);
                     $this->processResponse($api, $response);
@@ -1918,7 +1962,8 @@ class Resellercampid extends RegistrarModule {
      */
     public function checkAvailability ($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+
+        $row = $this->getModuleRow();
         $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
         $api->loadCommand("resellercampid_domains");
         $domains = new ResellercampidDomains($api);
@@ -1955,7 +2000,7 @@ class Resellercampid extends RegistrarModule {
         $api->loadCommand('resellercampid_domains');
         $domains = new ResellercampidDomains($api);
 
-        $result = $domains->detailsByName(['domain_name' => $domain, 'options' => 'All']);
+        $result = $domains->detailsByName(['domain_name' => $domain]);
         $this->processResponse($api, $result);
 
         if ($result->status() != 'OK') {
@@ -1966,10 +2011,83 @@ class Resellercampid extends RegistrarModule {
 
         return $this->Date->format(
             $format,
-            isset($response["expiry_date"])
-                ? $response["expiry_date"]
+            isset($response['expiry_date'])
+                ? $response['expiry_date']
                 : date('c')
         );
+    }
+
+        /**
+     * Gets the domain registration date
+     *
+     * @param stdClass $service The service belonging to the domain to lookup
+     * @param string $format The format to return the registration date in
+     * @return string The domain registration date in UTC time in the given format
+     * @see Services::get()
+     */
+    public function getRegistrationDate($service, $format = 'Y-m-d H:i:s')
+    {
+        Loader::loadHelpers($this, ['Date']);
+
+        $domain = $this->getServiceDomain($service);
+        $module_row_id = $service->module_row_id ?? null;
+
+        $row = $this->getModuleRow($module_row_id);
+        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == 'true');
+        $api->loadCommand('resellercampid_domains');
+        $domains = new ResellercampidDomains($api);
+
+        $result = $domains->detailsByName(['domain_name' => $domain]);
+        $this->processResponse($api, $result);
+
+        if ($result->status() != 'OK') {
+            return false;
+        }
+
+        $response = $result->response();
+
+        return $this->Date->format(
+            $format,
+            isset($response['creation_time'])
+                ? $response['creation_time']
+                : date('c')
+        );
+    }
+
+    /**
+     * Gets a list of name server data associated with a domain
+     *
+     * @param string $domain The domain to lookup
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @return array A list of name servers, each with the following fields:
+     *
+     *  - url The URL of the name server
+     *  - ips A list of IPs for the name server
+     */
+    public function getDomainNameServers($domain, $module_row_id = null)
+    {
+        $row = $this->getModuleRow($module_row_id);
+        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == 'true');
+        $api->loadCommand('resellercampid_domains');
+        $domains = new ResellercampidDomains($api);
+
+        $response = $domains->detailsByName(['domain_name' => $domain]);
+        $this->processResponse($api, $response);
+
+        $nameservers = [];
+        if ($response->status() == 'OK') {
+            $data = $response->response();
+            for ($i = 0; $i < 5; $i++) {
+                if (isset($data->{'ns' . ($i+1)})) {
+                    $nameservers[] = [
+                        'url' => trim($data->{'ns' . ($i+1)}),
+                        'ips' => [gethostbyname(trim($data->{'ns' . ($i+1)}))]
+                    ];
+                }
+            }
+        }
+
+        return $nameservers;
     }
 
     /**
@@ -2450,82 +2568,12 @@ class Resellercampid extends RegistrarModule {
         Loader::loadModels($this, array("Services"));
 
         $order_id = $this->getorderid($package->module_row, $vars['domain-name']);
-
+        if($order_id == null) {
+            return true;
+        }
         $this->Services->edit($vars['service-id'], array('domain-name' => $vars['domain-name'], 'order-id' => $order_id)); // performs service edit, and also calls YourModule::editService()
 
-        if (($errors = $this->Services->errors())) {
-            $this->parent->setMessage("error", $errors);
-        }
         return true;
-    }
-
-    /**
-     * Gets the Nameserver of a Registered domain name.
-     *
-     * @param array $vars An array of input params including:
-     * 	- domain The Registered domain name whose Nameserver you want to know.
-     * @return ResellercampidResponse
-     */
-    public function getDomainNameServers($domain, $module_row_id = null)
-    {
-        $row = $this->getModuleRow($module_row_id);
-        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
-        $api->loadCommand("resellercampid_domains");
-        $domains = new ResellercampidDomains($api);
-        $nameservers = [];
-        $order_id = $this->getorderid($module_row_id, $domain);
-        if ($order_id == null) {
-            return false;
-        } else{
-            $result = $domains->details(array('domain_id' => $order_id, 'fields' => "ns"));
-            $this->processResponse($api, $result);
-
-            if ($result->status() != 'OK') {
-                return false;
-            }
-            $response = $result->response();
-
-            if (isset($response)) {
-                foreach ($response as $ns => $nameserver) {
-                    $nameservers[] = [
-                        'url' => trim($nameserver),
-                        'ips' => [gethostbyname(trim($nameserver))]
-                    ];
-                }
-            }
-        }
-        return $nameservers;
-    }
-
-    /**
-     * Set the Nameserver of a Registered domain name.
-     *
-     * @param array $vars An array of input params including:
-     * 	- domain The Registered domain name whose Nameserver you want to know.
-     * @return ResellercampidResponse
-     */
-    public function setDomainNameservers($domain, $module_row_id = null, array $vars = [])
-    {
-        $row = $this->getModuleRow($module_row_id);
-        $api = $this->getApi($row->meta->reseller_id, $row->meta->key, $row->meta->sandbox == "true");
-        $api->loadCommand("resellercampid_domains");
-        $domains = new ResellercampidDomains($api);
-
-        $order_id = $this->getorderid($module_row_id, $domain);
-
-        $ns = array();
-        foreach ($vars as $i => $nameserver) {
-            if ($nameserver != "")
-                $ns[] = $nameserver;
-        }
-
-        $ns_ = implode(",", $ns);
-        $result = $domains->modifyNs(array('domain_id' => $order_id, 'ns' => $ns_));
-        $this->processResponse($api, $result);
-
-        $response = $result->response();
-
-        return $response;
     }
 
 }

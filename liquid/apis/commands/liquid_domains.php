@@ -512,4 +512,30 @@ class LiquidDomains {
         return $this->api->submit("domains/" . $vars["order-id"] . "/restore", $vars, "POST");
     }
 
+    /**
+     * Applies the Suspension on the specified Order.
+     *
+     * @param array $vars An array of input params including:
+     * 	- domain_id Domain Id of the Order on which the Suspension is to be applied
+     * 	- reason The reason for the suspension.
+     * @return LiquidResponse
+     */
+    public function suspend (array $vars)
+    {
+        $domain_id = $vars["domain_id"];
+        return $this->api->submit("domains/$domain_id/suspended", $vars, "PUT");
+    }
+
+    /**
+     * Removes the Suspension on the specified Order.
+     *
+     * @param array $vars An array of input params including:
+     * 	- domain_id Domain Id of the Order for which the Suspension is to be removed
+     * @return LiquidResponse
+     */
+    public function unsuspend (array $vars)
+    {
+        $domain_id = $vars["domain_id"];
+        return $this->api->submit("domains/$domain_id/suspended", $vars, "DELETE");
+    }
 }
