@@ -25,7 +25,7 @@ Sebelum memulai, pastikan Anda memiliki:
    Unduh atau klon repository ini ke server tempat Blesta diinstal:
 
    ```bash
-   git clone https://github.com/reynaldiarya/Liquid-Blesta.git
+   git clone https://github.com/Akselerasi-Prima-Digital/Liquid-Blesta.git
    ```
 
 ### 2. **Instal Modul**
