@@ -15,7 +15,12 @@ Automated domain registration and management for Blesta via Liquid APIs.
 </p>
 
 ## Description
-This repository contains production-ready registrar modules for Blesta that enable seamless integration with the Liquid domain registration platforms. It automates the entire lifecycle of domain management, from initial registration and transfers to renewals and DNS configuration. By bridging Blesta with the Liquid API, it eliminates manual provisioning tasks and provides a self-service interface for clients to manage their digital assets directly from the billing portal.
+This repository provides the latest production-ready registrar modules for Blesta, enabling seamless integration with the Liquid and ResellerCamp domain registration platforms. While the original GitHub repository remained inactive since 2022 with several unresolved bugs, this repository has been updated to incorporate the official **2026 update** distributed via the official [Liquid Documentation](https://liquid-docs.readthedocs.io/en/latest/blesta.html).
+
+> [!IMPORTANT]
+> This repository serves as the primary GitHub source for the latest module version (2026), bridging the gap between the outdated original repository and the latest official releases distributed via third-party links (Dropbox). It includes essential bug fixes and reflects the current state of the Liquid/ResellerCamp API.
+
+It automates the entire lifecycle of domain management, from initial registration and transfers to renewals and DNS configuration. By bridging Blesta with the Liquid/ResellerCamp API, it eliminates manual provisioning tasks and provides a self-service interface for clients.
 
 ## Features
 - Automated Domain Registration and Transfers with real-time API synchronization
@@ -117,4 +122,5 @@ Contributions are encouraged to improve TLD support and API reliability.
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Author
-Akselerasi Prima Digital
+- **Original Author**: Liquid ResellerCamp Team.
+- **Improvements & Maintenance**: Akselerasi Prima Digital
