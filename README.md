@@ -1,50 +1,120 @@
-# **Liquid Blesta - Registrar Module**
+# Liquid Blesta Registrar Modules
 
-**Liquid Blesta** adalah modul registrasi untuk **Blesta**, yang memungkinkan integrasi dengan registrar domain untuk memudahkan manajemen domain secara otomatis. Proyek ini bertujuan untuk memberikan solusi mudah bagi pengguna Blesta yang ingin mengelola domain langsung dari platform mereka.
+Automated domain registration and management for Blesta via Liquid APIs.
 
-Dengan modul ini, Anda dapat melakukan registrasi, pengelolaan, dan pembaruan domain secara otomatis, tanpa perlu meninggalkan dasbor Blesta Anda.
+<p align="center">
+<img src="https://img.shields.io/badge/version-2.2.0-blue.svg" />
+<img src="https://img.shields.io/badge/php-%3E%3D_7.2-777BB4.svg" />
+<img src="https://img.shields.io/badge/platform-Blesta-orange.svg" />
+<a href="LICENSE">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-yellow.svg" target="_blank" />
+</a>
+<a href="https://github.com/Akselerasi-Prima-Digital/Liquid-Blesta/actions">
+<img src="https://codecov.io/gh/Akselerasi-Prima-Digital/Liquid-Blesta/branch/main/graph/badge.svg" />
+</a>
+</p>
 
-## **Fitur Utama:**
-- **Integrasi Registrar Domain**: Modul ini mendukung registrar populer untuk memudahkan registrasi dan pengelolaan domain.
-- **Otomatisasi Proses**: Semua proses terkait domain—mulai dari pendaftaran hingga pembaruan—dilakukan secara otomatis.
-- **Antarmuka yang Mudah Digunakan**: Integrasi langsung dengan dasbor Blesta yang ramah pengguna, memungkinkan pengelolaan domain dengan mudah.
-- **Fitur Pembaruan Otomatis**: Pengguna dapat mengatur pembaruan domain secara otomatis tanpa khawatir domain akan kedaluwarsa.
+## Description
+This repository contains production-ready registrar modules for Blesta that enable seamless integration with the Liquid domain registration platforms. It automates the entire lifecycle of domain management, from initial registration and transfers to renewals and DNS configuration. By bridging Blesta with the Liquid API, it eliminates manual provisioning tasks and provides a self-service interface for clients to manage their digital assets directly from the billing portal.
 
-## **Dokumentasi:**
-Untuk instruksi lebih lanjut tentang instalasi dan penggunaan, kunjungi dokumentasi resmi kami di [Liquid Docs - Blesta Registrar Module](http://liquid-docs.readthedocs.io/en/latest/blesta.html).
+## Features
+- Automated Domain Registration and Transfers with real-time API synchronization
+- Intelligent Domain Renewals with automated expiry date validation
+- Comprehensive DNS Management allowing clients to manage records within Blesta
+- Robust Sandbox Mode for safe integration testing and workflow validation
+- Automatic Customer and Contact creation on the registrar platform
+- Support for specialized TLD requirements including .ASIA, .AU, .RU, .US, and .CO
+- Extended WHOIS contact management with granular field validation
+- Service suspension and unsuspension support for administrative control
+- Multi-module support for both Liquid platforms
 
-## **Prasyarat:**
-Sebelum memulai, pastikan Anda memiliki:
-- **Blesta** yang terinstal dan berfungsi dengan baik.
-- **Akun Registrar** dengan akses API untuk registrar yang didukung.
-- **PHP** (versi yang kompatibel dengan Blesta) dan akses ke server yang diperlukan.
+## Tech Stack
+- **Language**: PHP 7.2+
+- **Platform**: Blesta 4.x / 5.x
+- **Integration**: Liquid HTTP API
+- **Format**: Blesta Registrar Component Architecture
 
-## **Cara Instalasi:**
+## Installation
 
-### 1. **Unduh Modul**
-   Unduh atau klon repository ini ke server tempat Blesta diinstal:
+### Prerequisites
+- Blesta installation (v4.0 or higher recommended)
+- PHP 7.2 or higher
+- Valid Reseller account with Liquid
 
+### Steps
+
+1. Clone the repository to your local machine:
    ```bash
    git clone https://github.com/Akselerasi-Prima-Digital/Liquid-Blesta.git
    ```
 
-### 2. **Instal Modul**
-   Ikuti petunjuk di dokumentasi untuk menginstal modul ke dalam Blesta. Proses ini akan mencakup pengaturan API registrar dan mengonfigurasi modul di dasbor Blesta Anda.
+2. Upload the module folders to your Blesta installation:
+   - Copy the `liquid` directory to `/components/modules/`
+   - Copy the `resellercampid` directory to `/components/modules/`
 
-### 3. **Konfigurasi**
-   - Masuk ke dasbor admin Blesta.
-   - Arahkan ke pengaturan registrar dan masukkan kredensial API Anda.
-   - Sesuaikan pengaturan sesuai kebutuhan Anda, seperti pilihan registrar, durasi pendaftaran domain, dll.
+3. Access your Blesta Admin portal and navigate to **Settings > Modules > Available**.
 
-### 4. **Mulai Gunakan**
-   Setelah konfigurasi selesai, Anda dapat mulai mengelola domain secara langsung dari dasbor Blesta Anda!
+4. Locate **Liquid** or **ResellerCampID** in the list and click **Install**.
 
-## **Cara Berkontribusi:**
-Jika Anda tertarik untuk berkontribusi pada proyek ini, ikuti langkah-langkah berikut:
+5. Configure the module by adding a new Label/Row with your API credentials.
 
-1. Fork repository ini.
-2. Buat branch baru untuk fitur atau perbaikan yang Anda inginkan.
-3. Kirimkan pull request dengan deskripsi yang jelas tentang perubahan yang Anda buat.
+## Configuration
 
-## **Lisensi:**
-Proyek ini dilisensikan di bawah **MIT License**. Anda bebas untuk menggunakan, mengubah, dan mendistribusikan kode ini sesuai kebutuhan, dengan syarat atribusi yang sesuai.
+### API Credentials
+To connect the module to the registrar platform, you must provide the following in the module configuration:
+- **Reseller ID**: Your unique identifier from the Liquid/ResellerCamp panel.
+- **API Key**: The security key generated in your reseller settings.
+- **Sandbox**: Toggle this to `true` if you are using a test account (e.g., test.httpapi.com).
+
+### TLD Management
+After installing the module, navigate to **Packages > Browse Packages > Create Package** to set up your domain products:
+1. Set the **Module** to Liquid or ResellerCampID.
+2. Select the TLDs you wish to offer (e.g., .com, .net, .id).
+3. Configure the required WHOIS fields based on the selected TLD requirements.
+
+## Usage
+
+### Automated Provisioning
+Once a client completes a purchase for a domain package, Blesta will automatically trigger the `addService` method in the module. The module will:
+1. Verify if the customer already exists on the registrar platform (by email).
+2. Create a new customer and contact if necessary.
+3. Submit the registration or transfer request to the API.
+4. Store the remote Order ID within the Blesta service metadata.
+
+### Client-Side Management
+Clients can manage their domains via the Client Area:
+- **Nameservers**: Update nameserver records in real-time.
+- **DNS Records**: Add/Edit/Delete A, CNAME, MX, and TXT records if DNS Management is enabled.
+- **Privacy**: Manage WHOIS privacy protection settings.
+
+### Administrative Commands
+Administrators can perform manual actions from the Service Management page:
+- **Renew**: Manually trigger a renewal request.
+- **Suspend/Unsuspend**: Control domain status for policy enforcement.
+
+## Project Structure
+```
+liquid/                 # Core module files for Liquid Registrar
+  apis/                 # API wrapper and command logic
+  config/               # TLD and field definitions
+  language/             # Translation strings (English, etc.)
+  views/                # UI templates for Admin and Client areas
+resellercampid/         # Core module files for ResellerCampID
+  apis/                 # API communication logic
+  config/               # Platform-specific configuration
+  language/             # Multi-language support files
+  views/                # Template files for Blesta integration
+```
+
+## Contributing
+Contributions are encouraged to improve TLD support and API reliability.
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/improvement-name`.
+3. Implement your changes following Blesta coding standards.
+4. Submit a pull request with a detailed description of the improvements.
+
+## License
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Author
+Akselerasi Prima Digital
